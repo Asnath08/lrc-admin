@@ -1,0 +1,300 @@
+/* ================================
+   ANIMATIONS
+================================ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.fade-up-1 { animation: fadeUp 0.7s ease both; }
+.fade-up-2 { animation: fadeUp 0.7s 0.2s ease both; }
+.fade-up-3 { animation: fadeUp 0.7s 0.4s ease both; }
+.fade-up-4 { animation: fadeUp 0.7s 0.6s ease both; }
+
+.slide-in-1 { animation: slideIn 0.6s 0.2s ease both; }
+.slide-in-2 { animation: slideIn 0.6s 0.4s ease both; }
+.slide-in-3 { animation: slideIn 0.6s 0.6s ease both; }
+
+/* ================================
+   HERO STYLES
+================================ */
+.hero-section {
+  background:
+    radial-gradient(ellipse 80% 60% at 70% 40%, rgba(120, 60, 0, 0.55) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 85% 70%, rgba(80, 30, 0, 0.4) 0%, transparent 60%),
+    linear-gradient(160deg, #1A0D00 0%, #2A1200 40%, #1A0800 100%);
+  min-height: calc(100vh - 64px);
+}
+
+.hero-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 5rem 2.5rem;
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 3rem;
+  align-items: center;
+}
+
+.hero-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid rgba(212, 150, 10, 0.5);
+  border-radius: 999px;
+  padding: 0.35rem 1rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #D4960A;
+  margin-bottom: 1.2rem;
+  align-self: flex-start;
+}
+
+.hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.8rem, 6vw, 5.2rem);
+  font-weight: 900;
+  line-height: 1.05;
+  color: white;
+}
+
+.hero-title-italic {
+  font-style: italic;
+  color: #D4960A;
+  font-family: 'Playfair Display', serif;
+}
+
+.hero-description {
+  margin-top: 1.6rem;
+  font-size: 1rem;
+  line-height: 1.75;
+  color: rgba(245, 237, 214, 0.72);
+  max-width: 540px;
+}
+
+.buttons-row {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2.4rem;
+  flex-wrap: wrap;
+}
+
+.stats-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ================================
+   TABLETTE (max 1024px)
+================================ */
+@media (max-width: 1024px) {
+
+  .hero-inner {
+    grid-template-columns: 1fr;
+    padding: 3rem 2rem;
+  }
+
+  .stats-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .stat-card {
+    width: 100%;
+  }
+
+  .mission-inner {
+    grid-template-columns: 1fr !important;
+  }
+
+  .mission-right {
+    display: none !important;
+  }
+
+  .programmes-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .impact-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .evenements-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .soutien-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .contact-inner {
+    grid-template-columns: 1fr !important;
+  }
+
+  .footer-inner {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 2rem !important;
+  }
+}
+
+/* ================================
+   MOBILE (max 768px)
+================================ */
+@media (max-width: 768px) {
+
+  /* NAVBAR */
+  .nav-links {
+    display: none !important;
+  }
+
+  .hamburger-btn {
+    display: flex !important;
+  }
+
+  /* NAVBAR — cacher bouton don sur mobile */
+.navbar-don-btn {
+  display: none !important;
+}
+
+/* MISSION — garder les cartes visibles en 2x2 */
+.mission-right {
+  display: block !important;
+}
+
+.mission-cards-grid {
+  grid-template-columns: 1fr 1fr !important;
+}
+
+  /* HERO */
+  .hero-inner {
+    grid-template-columns: 1fr;
+    padding: 2rem 1.5rem;
+    min-height: auto;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .hero-badge {
+    font-size: 0.55rem;
+    padding: 0.25rem 0.75rem;
+  }
+
+  .buttons-row {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .buttons-row button {
+    width: 100% !important;
+    text-align: center;
+  }
+
+  /* STATS — 2 colonnes sur mobile */
+  .stats-col {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    width: 100%;
+    gap: 0.8rem;
+  }
+
+  .stat-card {
+    width: 100% !important;
+  }
+
+/* MISSION */
+.mission-inner {
+  grid-template-columns: 1fr !important;
+}
+
+.mission-cards-grid {
+  grid-template-columns: 1fr 1fr !important;
+  display: grid !important;
+}
+
+  /* PROGRAMMES */
+  .programmes-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .programmes-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+
+  /* IMPACT */
+  .impact-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* EVENEMENTS */
+  .evenements-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .evenements-card {
+    flex-direction: column !important;
+  }
+
+  /* SOUTIEN */
+  .soutien-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* DON */
+  .don-montants {
+    gap: 0.5rem !important;
+    flex-wrap: wrap !important;
+  }
+
+  /* CONTACT */
+  .contact-inner {
+    grid-template-columns: 1fr !important;
+  }
+
+  .contact-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* FOOTER */
+  .footer-inner {
+    grid-template-columns: 1fr !important;
+  }
+
+  .footer-bottom {
+    flex-direction: column !important;
+    text-align: center !important;
+  }
+}
+
+/* ================================
+   PETIT MOBILE (max 480px)
+================================ */
+@media (max-width: 480px) {
+
+  .hero-title {
+    font-size: 1.8rem;
+  }
+
+  .stats-col {
+    grid-template-columns: 1fr !important;
+  }
+
+  .impact-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
