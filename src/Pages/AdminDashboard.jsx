@@ -42,7 +42,7 @@ const NAV = [
   { id: "configuration",   icon: "⚙️", label: "Config" },
 ];
 
-// ── Hook responsive ────────────────────────────────────────────────────────
+//  Hook responsive 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
   useEffect(() => {
@@ -53,7 +53,7 @@ function useIsMobile() {
   return isMobile;
 }
 
-// ── Micro-composants ──────────────────────────────────────────────────────
+//  Micro-composants 
 
 function SectionTitle({ children }) {
   return (
@@ -186,7 +186,7 @@ function dl(data, name) {
   URL.revokeObjectURL(url);
 }
 
-// ── Composant principal ────────────────────────────────────────────────────
+//  Composant principal 
 function AdminDashboard({ onClose }) {
   const { t, i18n } = useTranslation();
   const isMobile = useIsMobile();
@@ -198,8 +198,13 @@ function AdminDashboard({ onClose }) {
   const [onglet, setOnglet]         = useState("stats");
   const [loading, setLoading]       = useState(true);
   const [collapsed, setCollapsed]   = useState(false);
-  // Sur mobile, la sidebar commence fermée
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [filtreRole, setFiltreRole] = useState("USER");
+  const [usersMenuOpen, setUsersMenuOpen] = useState(false);
+  const [showAddUser, setShowAddUser] = useState(false);
+  const [newUser, setNewUser] = useState({ prenom: "", nom: "", email: "", motDePasse: "", profession: "", telephone: "", langue: "fr" });
+  const [addUserMsg, setAddUserMsg] = useState("");
+  const [addUserLoading, setAddUserLoading] = useState(false);
 
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: "", message: "", onConfirm: null, icon: "⚠️", confirmColor: C.primary });
   const [successModal, setSuccessModal] = useState({ isOpen: false, title: "", message: "", onAction: null, actionLabel: "" });
@@ -288,6 +293,23 @@ function AdminDashboard({ onClose }) {
     } catch { setNotifProgMsg(t("admin.erreurEnvoi")); }
   };
 
+  const ajouterUser = async () => {
+  if (!newUser.email || !newUser.motDePasse || !newUser.prenom || !newUser.nom) {
+    setAddUserMsg("Prénom, nom, email et mot de passe sont requis."); return;
+  }
+  setAddUserLoading(true);
+  try {
+    await api.post("/auth/register", { ...newUser, role: filtreRole });
+    await charger();
+    setShowAddUser(false);
+    setNewUser({ prenom: "", nom: "", email: "", motDePasse: "", profession: "", telephone: "", langue: "fr" });
+    setSuccessModal({ isOpen: true, title: "Utilisateur ajouté", message: `${newUser.prenom} a été ajouté comme ${filtreRole}.`, onAction: null, actionLabel: "" });
+  } catch (e) {
+    setAddUserMsg(e.response?.data?.message || "Erreur lors de la création.");
+  }
+  setAddUserLoading(false);
+};
+
   const notifierUser = (u) => confirmer(t("admin.envoyerNotif"), `${t("admin.envoyerNotifA")} ${u.prenom} ${u.nom} ?`, async () => {
     try { await api.post("/admin/notify-all", { titre: t("admin.messageStaff"), message: t("admin.equipeContact") });
       setSuccessModal({ isOpen: true, title: t("admin.notifEnvoyee"), message: `${u.prenom} ${u.nom} ${t("admin.notifie")}`, onAction: null, actionLabel: "" });
@@ -299,8 +321,6 @@ function AdminDashboard({ onClose }) {
 
   const current = NAV.find(n => n.id === onglet);
 
-  // Sur mobile : sidebar = drawer par-dessus le contenu
-  // Sur desktop : sidebar = colonne fixe à gauche (comportement original)
   const sidebarWidth = isMobile ? 232 : (collapsed ? 64 : 232);
 
   return (
@@ -324,7 +344,7 @@ function AdminDashboard({ onClose }) {
         flexDirection: "column",
         transition: "transform 0.25s ease, width 0.25s ease",
         overflow: "hidden",
-        // Mobile : sidebar en position fixe, cachée par défaut
+
         ...(isMobile ? {
           position: "fixed",
           top: 0,
@@ -354,17 +374,55 @@ function AdminDashboard({ onClose }) {
 
         {/* Navigation */}
         <nav style={{ flex: 1, overflowY: "auto", padding: "0.6rem 0.4rem" }}>
-          {NAV.map(tab => {
-            const active = onglet === tab.id;
-            const isCollapsed = !isMobile && collapsed;
-            return (
-              <button key={tab.id} onClick={() => handleOnglet(tab.id)} title={isCollapsed ? tab.label : undefined}
-                style={{ display: "flex", alignItems: "center", gap: "0.65rem", width: "100%", padding: isCollapsed ? "0.65rem" : "0.6rem 0.75rem", borderRadius: "9px", border: "none", justifyContent: isCollapsed ? "center" : "flex-start", background: active ? `${C.primary}18` : "transparent", color: active ? C.primary : C.textMuted, cursor: "pointer", fontSize: "0.8rem", fontWeight: active ? "700" : "400", fontFamily: theme.fonts.body, transition: "all 0.15s", marginBottom: "2px", whiteSpace: "nowrap", overflow: "hidden", borderLeft: !isCollapsed ? `3px solid ${active ? C.primary : "transparent"}` : "none" }}>
-                <span style={{ fontSize: "0.95rem", flexShrink: 0 }}>{tab.icon}</span>
-                {!isCollapsed && <span>{tab.label}</span>}
-              </button>
-            );
-          })}
+                      {NAV.map(tab => {
+              const active = onglet === tab.id;
+              const isCollapsed = !isMobile && collapsed;
+
+              // Bouton spécial pour "users" avec sous-menu
+              if (tab.id === "users") {
+                return (
+                  <div key={tab.id}>
+                    <button
+                      onClick={() => setUsersMenuOpen(v => !v)}
+                      style={{ display: "flex", alignItems: "center", gap: "0.65rem", width: "100%", padding: isCollapsed ? "0.65rem" : "0.6rem 0.75rem", borderRadius: "9px", border: "none", justifyContent: isCollapsed ? "center" : "flex-start", background: active ? `${C.primary}18` : "transparent", color: active ? C.primary : C.textMuted, cursor: "pointer", fontSize: "0.8rem", fontWeight: active ? "700" : "400", fontFamily: theme.fonts.body, transition: "all 0.15s", marginBottom: "2px", whiteSpace: "nowrap", overflow: "hidden", borderLeft: !isCollapsed ? `3px solid ${active ? C.primary : "transparent"}` : "none" }}
+                    >
+                      <span style={{ fontSize: "0.95rem", flexShrink: 0 }}>{tab.icon}</span>
+                      {!isCollapsed && (
+                        <>
+                          <span style={{ flex: 1 }}>{tab.label}</span>
+                          <span style={{ fontSize: "0.7rem", transition: "transform 0.2s", transform: usersMenuOpen ? "rotate(180deg)" : "rotate(0deg)" }}>▾</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* Sous-menu déroulant */}
+                    {usersMenuOpen && !isCollapsed && (
+                      <div style={{ marginLeft: "1.5rem", marginBottom: "0.25rem", display: "flex", flexDirection: "column", gap: "2px" }}>
+                        {[ "ADMIN", "USER", "STAFF", "PARTNER"].map(r => (
+                          <button
+                            key={r}
+                            onClick={() => { handleOnglet("users"); setFiltreRole(r); }}
+                            style={{ display: "flex", alignItems: "center", gap: "0.5rem", width: "100%", padding: "0.4rem 0.75rem", borderRadius: "7px", border: "none", background: filtreRole === r && active ? `${C.primary}22` : "transparent", color: filtreRole === r && active ? C.primary : C.textMuted, cursor: "pointer", fontSize: "0.75rem", fontWeight: filtreRole === r && active ? "700" : "400", fontFamily: theme.fonts.body, transition: "all 0.15s", textAlign: "left" }}
+                          >
+                            <span style={{ fontSize: "0.6rem", color: filtreRole === r && active ? C.primary : C.textDim }}>●</span>
+                            {r}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              // Boutons normaux
+              return (
+                <button key={tab.id} onClick={() => handleOnglet(tab.id)} title={isCollapsed ? tab.label : undefined}
+                  style={{ display: "flex", alignItems: "center", gap: "0.65rem", width: "100%", padding: isCollapsed ? "0.65rem" : "0.6rem 0.75rem", borderRadius: "9px", border: "none", justifyContent: isCollapsed ? "center" : "flex-start", background: active ? `${C.primary}18` : "transparent", color: active ? C.primary : C.textMuted, cursor: "pointer", fontSize: "0.8rem", fontWeight: active ? "700" : "400", fontFamily: theme.fonts.body, transition: "all 0.15s", marginBottom: "2px", whiteSpace: "nowrap", overflow: "hidden", borderLeft: !isCollapsed ? `3px solid ${active ? C.primary : "transparent"}` : "none" }}>
+                  <span style={{ fontSize: "0.95rem", flexShrink: 0 }}>{tab.icon}</span>
+                  {!isCollapsed && <span>{tab.label}</span>}
+                </button>
+              );
+             })}
         </nav>
 
         {/* Footer sidebar */}
@@ -447,76 +505,132 @@ function AdminDashboard({ onClose }) {
             </>
           )}
 
-          {/* USERS */}
-          {onglet === "users" && (
-            <>
-              <SectionTitle>{users.length} comptes enregistrés</SectionTitle>
-              {loading ? <Loader /> : (
-                isMobile ? (
-                  // Vue cartes sur mobile au lieu du tableau
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                    {users.map(u => (
-                      <Card key={u.id}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.75rem" }}>
-                          <div style={{ width: 36, height: 36, borderRadius: "50%", background: `linear-gradient(135deg,${C.primary}55,${C.gold}55)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.85rem", fontWeight: "700", color: C.text, flexShrink: 0 }}>
-                            {u.prenom?.charAt(0).toUpperCase()}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontWeight: "700", fontSize: "0.88rem", color: C.text }}>{u.prenom} {u.nom}</div>
-                            <div style={{ fontSize: "0.72rem", color: C.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.email}</div>
-                          </div>
-                          <IconBtn icon="🗑️" color={C.red} onClick={() => supprimerUser(u.id)} title={t("admin.supprimerUser")} />
-                        </div>
-                        <DSelect value={u.role} onChange={e => changerRole(u.id, e.target.value)} style={{ padding: "0.4rem 0.6rem", fontSize: "0.8rem" }}>
-                          {user.role === "ADMIN"
-                            ? ["USER","STAFF","ADMIN","PARTNER"].map(r => <option key={r} value={r}>{r}</option>)
-                            : ["USER","PARTNER"].map(r => <option key={r} value={r}>{r}</option>)}
-                        </DSelect>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <Card>
-                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                      <thead>
-                        <tr>
-                          {[t("admin.nom"), t("admin.email"), t("admin.role"), t("admin.actions")].map(h => (
-                            <th key={h} style={{ textAlign: "left", padding: "0.6rem 1rem", fontSize: "0.6rem", fontWeight: "700", letterSpacing: "0.1em", color: C.textMuted, borderBottom: `1px solid ${C.border}`, textTransform: "uppercase" }}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {users.map(u => (
-                          <tr key={u.id} style={{ borderBottom: `1px solid ${C.border}` }}>
-                            <td style={{ padding: "0.8rem 1rem" }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                                <div style={{ width: 28, height: 28, borderRadius: "50%", background: `linear-gradient(135deg,${C.primary}55,${C.gold}55)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.72rem", fontWeight: "700", color: C.text, flexShrink: 0 }}>
-                                  {u.prenom?.charAt(0).toUpperCase()}
-                                </div>
-                                <span style={{ fontSize: "0.875rem", color: C.text, fontWeight: "600" }}>{u.prenom} {u.nom}</span>
-                              </div>
-                            </td>
-                            <td style={{ padding: "0.8rem 1rem", fontSize: "0.78rem", color: C.textMuted }}>{u.email}</td>
-                            <td style={{ padding: "0.8rem 1rem" }}>
-                              <DSelect value={u.role} onChange={e => changerRole(u.id, e.target.value)} style={{ width: "auto", padding: "0.3rem 0.6rem", fontSize: "0.75rem" }}>
-                                {user.role === "ADMIN"
-                                  ? ["USER","STAFF","ADMIN","PARTNER"].map(r => <option key={r} value={r} style={{ background: "#1A1826", color: "#F0EBF8" }}>{r}</option>)
-                                  : ["USER","PARTNER"].map(r => <option key={r} value={r} style={{ background: "#1A1826", color: "#F0EBF8" }}>{r}</option>)}
-                              </DSelect>
-                            </td>
-                            <td style={{ padding: "0.8rem 1rem" }}>
-                              <IconBtn icon="🗑️" color={C.red} onClick={() => supprimerUser(u.id)} title={t("admin.supprimerUser")} />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </Card>
-                )
-              )}
-            </>
-          )}
+       {onglet === "users" && (
+  <>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+    <SectionTitle style={{ margin: 0 }}>
+      {users.filter(u => u.role === filtreRole).length} comptes
+      <span style={{
+        marginLeft: "0.6rem", fontSize: "0.68rem", fontWeight: "700",
+        padding: "0.2rem 0.7rem", borderRadius: "999px",
+        backgroundColor: filtreRole === "ADMIN" ? `${C.primary}22` : filtreRole === "STAFF" ? `${C.blue}22` : filtreRole === "PARTNER" ? `${C.gold}22` : `${C.green}22`,
+        color: filtreRole === "ADMIN" ? C.primary : filtreRole === "STAFF" ? C.blue : filtreRole === "PARTNER" ? C.gold : C.green,
+        border: `1px solid ${filtreRole === "ADMIN" ? C.primary : filtreRole === "STAFF" ? C.blue : filtreRole === "PARTNER" ? C.gold : C.green}44`
+      }}>
+        {filtreRole}
+      </span>
+    </SectionTitle>
+  </div>
+  <Btn onClick={() => { setShowAddUser(v => !v); setAddUserMsg(""); }}>
+    + Ajouter un {filtreRole === "ADMIN" ? "admin" : filtreRole === "STAFF" ? "staff" : filtreRole === "PARTNER" ? "partenaire" : "utilisateur"}
+  </Btn>
+</div>
 
+{/* FORMULAIRE AJOUT */}
+{showAddUser && (
+  <Card style={{ marginBottom: "1.5rem" }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "1rem" }}>
+      <Field label="Prénom *">
+        <DInput value={newUser.prenom} onChange={e => setNewUser(p => ({ ...p, prenom: e.target.value }))} placeholder="Prénom" />
+      </Field>
+      <Field label="Nom *">
+        <DInput value={newUser.nom} onChange={e => setNewUser(p => ({ ...p, nom: e.target.value }))} placeholder="Nom" />
+      </Field>
+      <Field label="Email *">
+        <DInput value={newUser.email} onChange={e => setNewUser(p => ({ ...p, email: e.target.value }))} placeholder="email@exemple.com" type="email" />
+      </Field>
+      <Field label="Mot de passe *">
+        <DInput value={newUser.motDePasse} onChange={e => setNewUser(p => ({ ...p, motDePasse: e.target.value }))} placeholder="Mot de passe" type="password" />
+      </Field>
+      <Field label="Profession">
+        <DInput value={newUser.profession} onChange={e => setNewUser(p => ({ ...p, profession: e.target.value }))} placeholder="Profession" />
+      </Field>
+      <Field label="Téléphone">
+        <DInput value={newUser.telephone} onChange={e => setNewUser(p => ({ ...p, telephone: e.target.value }))} placeholder="+226 00 00 00 00" />
+      </Field>
+    </div>
+    {addUserMsg && <Msg text={addUserMsg} ok={false} />}
+    <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem" }}>
+      <Btn onClick={ajouterUser} style={{ opacity: addUserLoading ? 0.6 : 1 }}>
+        {addUserLoading ? "Création..." : "Créer le compte"}
+      </Btn>
+      <Btn outline onClick={() => { setShowAddUser(false); setAddUserMsg(""); }}>
+        Annuler
+      </Btn>
+    </div>
+  </Card>
+)}
+
+
+    {loading ? <Loader /> : (
+      isMobile ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          {(users.filter(u => u.role === filtreRole)).map(u => (
+            <Card key={u.id}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.75rem" }}>
+                <div style={{ width: 36, height: 36, borderRadius: "50%", background: `linear-gradient(135deg,${C.primary}55,${C.gold}55)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.85rem", fontWeight: "700", color: C.text, flexShrink: 0 }}>
+                  {u.prenom?.charAt(0).toUpperCase()}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: "700", fontSize: "0.88rem", color: C.text }}>{u.prenom} {u.nom}</div>
+                  <div style={{ fontSize: "0.72rem", color: C.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.email}</div>
+                </div>
+                <IconBtn icon="🗑️" color={C.red} onClick={() => supprimerUser(u.id)} title={t("admin.supprimerUser")} />
+              </div>
+              <DSelect value={u.role} onChange={e => changerRole(u.id, e.target.value)} style={{ padding: "0.4rem 0.6rem", fontSize: "0.8rem" }}>
+                {user.role === "ADMIN"
+                  ? ["USER","STAFF","ADMIN","PARTNER"].map(r => <option key={r} value={r}>{r}</option>)
+                  : ["USER","PARTNER"].map(r => <option key={r} value={r}>{r}</option>)}
+              </DSelect>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                {[t("admin.nom"), t("admin.email"), t("admin.role"), t("admin.actions")].map(h => (
+                  <th key={h} style={{ textAlign: "left", padding: "0.6rem 1rem", fontSize: "0.6rem", fontWeight: "700", letterSpacing: "0.1em", color: C.textMuted, borderBottom: `1px solid ${C.border}`, textTransform: "uppercase" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {(filtreRole === "TOUS" ? users : users.filter(u => u.role === filtreRole)).map(u => (
+                <tr key={u.id} style={{ borderBottom: `1px solid ${C.border}` }}>
+                  <td style={{ padding: "0.8rem 1rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <div style={{ width: 28, height: 28, borderRadius: "50%", background: `linear-gradient(135deg,${C.primary}55,${C.gold}55)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.72rem", fontWeight: "700", color: C.text, flexShrink: 0 }}>
+                        {u.prenom?.charAt(0).toUpperCase()}
+                      </div>
+                      <span style={{ fontSize: "0.875rem", color: C.text, fontWeight: "600" }}>{u.prenom} {u.nom}</span>
+                    </div>
+                  </td>
+                  <td style={{ padding: "0.8rem 1rem", fontSize: "0.78rem", color: C.textMuted }}>{u.email}</td>
+                  <td style={{ padding: "0.8rem 1rem" }}>
+                    <DSelect
+                      value={u.role}
+                      onChange={e => changerRole(u.id, e.target.value)}
+                      style={{ width: "auto", padding: "0.3rem 0.6rem", fontSize: "0.75rem" }}
+                    >
+                      {user.role === "ADMIN"
+                        ? ["USER","STAFF","ADMIN","PARTNER"].map(r => <option key={r} value={r} style={{ background: "#1A1826", color: "#F0EBF8" }}>{r}</option>)
+                        : ["USER","PARTNER"].map(r => <option key={r} value={r} style={{ background: "#1A1826", color: "#F0EBF8" }}>{r}</option>)}
+                    </DSelect>
+                  </td>
+                  <td style={{ padding: "0.8rem 1rem" }}>
+                    <IconBtn icon="🗑️" color={C.red} onClick={() => supprimerUser(u.id)} title={t("admin.supprimerUser")} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      )
+    )}
+  </>
+)}
           {/* CRÉER PROGRAMME */}
           {onglet === "programmes" && (
             <>
